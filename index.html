@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Transacciones Inmobiliarias Bogotá</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      background-color: #3AAFA9;
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', Times, serif;
+      margin: 20px;
+      background: #3AAFA9;
+    }
+
+    h2 {
+      margin: 10px;
+      text-align: center;
+      font-size: 40px;
+    }
+
+    .filters {
+      text-align: center;
+      margin-bottom: 20px;
+      background-color: #3AAFA9;
+      border: none;
+      border-radius: 6px;
+      margin: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .filters label {
+      font-size: 20px;
+      margin-right: 10px;
+    }
+
+    canvas {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 500px;
+    }
+
+    .insight {
+      background-color: #2B7A7B;
+      color: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 15px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      font-family: 'Arial', sans-serif;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .insight p,
+    .insight h3,
+    .insight strong {
+      background-color: #2B7A7B;
+      color: white;
+    }
+
+    .grafico-con-insight {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 700px;
+      width: 100%;
+      margin: 10px;
+    }
+
+    .fila-graficos {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Transacciones Inmobiliarias en Bogotá (2019-2024)</h2>
+  <div class="filters">
+    <label for="yearSelect"><b>Filtrar por año:</b></label>
+    <select id="yearSelect">
+      <option value="all">Todos</option>
+      <option value="2019">2019</option>
+      <option value="2020">2020</option>
+      <option value="2021">2021</option>
+      <option value="2022">2022</option>
+      <option value="2023">2023</option>
+      <option value="2024">2024</option>
+    </select>
+  </div>
+
+  <!-- Fila 1 -->
+  <div class="fila-graficos">
+    <div class="grafico-con-insight">
+      <canvas id="lineChart"></canvas>
+      <div class="insight">
+        <h3>📈 Crecimiento del mercado residencial</h3>
+        <p>
+          Entre 2020 y 2022, las transacciones de inmuebles residenciales en Bogotá pasaron de
+          <strong>45.496</strong> a <strong>84.413</strong>, un incremento del 85%.
+          Esta tendencia refleja una recuperación importante del mercado habitacional tras la caída en 2020.
+        </p>
+      </div>
+    </div>
+    <div class="grafico-con-insight">
+      <canvas id="barChart"></canvas>
+      <div class="insight">
+        <h3>📊 Estancamiento en el sector no residencial</h3>
+        <p>
+          A diferencia del mercado residencial, las transacciones de inmuebles <strong>no residenciales</strong>
+          se han mantenido relativamente estables desde 2019.
+          En 2019 hubo <strong>31.145</strong> transacciones y en 2024 solo <strong>31.013</strong>, lo que refleja
+          una <strong>falta de crecimiento</strong> en este segmento durante todo el periodo.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fila 2 -->
+  <div class="fila-graficos">
+    <div class="grafico-con-insight">
+      <canvas id="pieChart"></canvas>
+      <div class="insight">
+        <h3>🧮 Participación acumulada por tipo de inmueble</h3>
+        <p>
+          Durante el período 2019-2024, los inmuebles <strong>residenciales</strong> representaron aproximadamente el
+          <strong>69%</strong> del total de transacciones,
+          mientras que los <strong>no residenciales</strong> aportaron solo un <strong>31%</strong>. Esto muestra una
+          clara <strong>preferencia del mercado por propiedades residenciales</strong>.
+        </p>
+      </div>
+    </div>
+    <div class="grafico-con-insight">
+      <canvas id="stackedChart"></canvas>
+      <div class="insight">
+        <h3>🏘️ 2022: el pico de actividad inmobiliaria</h3>
+        <p>
+          El año <strong>2022</strong> registró el mayor número total de transacciones inmobiliarias:
+          <strong>127.531</strong>.
+          Este pico fue impulsado principalmente por un aumento significativo en el sector
+          <strong>residencial</strong>, que alcanzó <strong>84.413</strong> operaciones.
+          A partir de 2023, se observa una caída general, seguida de una leve recuperación en 2024.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const data = {
+      years: ['2019', '2020', '2021', '2022', '2023', '2024'],
+      residencial: [49903, 45496, 75548, 84413, 66967, 68057],
+      noResidencial: [31145, 26362, 41095, 43118, 30973, 31013],
+    };
+
+    const colors = {
+      residencial: 'rgba(54, 162, 235, 0.7)',
+      noResidencial: 'rgba(255, 99, 132, 0.7)'
+    };
+
+    function updateCharts(yearFilter) {
+      let labels = data.years;
+      let residencialData = data.residencial;
+      let noResidencialData = data.noResidencial;
+
+      if (yearFilter !== 'all') {
+        const index = labels.indexOf(yearFilter);
+        labels = [labels[index]];
+        residencialData = [residencialData[index]];
+        noResidencialData = [noResidencialData[index]];
+      }
+
+      const datasetsLine = [
+        {
+          label: 'Residencial',
+          data: residencialData,
+          borderColor: colors.residencial,
+          backgroundColor: colors.residencial,
+          fill: false,
+          tension: 0.3
+        },
+        {
+          label: 'No Residencial',
+          data: noResidencialData,
+          borderColor: colors.noResidencial,
+          backgroundColor: colors.noResidencial,
+          fill: false,
+          tension: 0.3
+        }
+      ];
+
+      const datasetsBar = [
+        {
+          label: 'Residencial',
+          data: residencialData,
+          backgroundColor: colors.residencial,
+        },
+        {
+          label: 'No Residencial',
+          data: noResidencialData,
+          backgroundColor: colors.noResidencial,
+        }
+      ];
+
+      const pieData = {
+        labels: ['Residencial', 'No Residencial'],
+        datasets: [{
+          data: [residencialData.reduce((a, b) => a + b, 0), noResidencialData.reduce((a, b) => a + b, 0)],
+          backgroundColor: [colors.residencial, colors.noResidencial]
+        }]
+      };
+
+      const stackedData = {
+        labels,
+        datasets: datasetsBar
+      };
+
+      lineChart.data.labels = labels;
+      lineChart.data.datasets = datasetsLine;
+      lineChart.update();
+
+      barChart.data.labels = labels;
+      barChart.data.datasets = datasetsBar;
+      barChart.update();
+
+      pieChart.data = pieData;
+      pieChart.update();
+
+      stackedChart.data = stackedData;
+      stackedChart.update();
+    }
+
+    const lineChart = new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: {},
+      options: {
+        plugins: { title: { display: true, text: 'Línea comparativa' } },
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+      }
+    });
+
+    const barChart = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {},
+      options: {
+        plugins: { title: { display: true, text: 'Barras por tipo' } },
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+      }
+    });
+
+    const pieChart = new Chart(document.getElementById('pieChart'), {
+      type: 'pie',
+      data: {},
+      options: {
+        plugins: { title: { display: true, text: 'Distribución acumulada' } },
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+      }
+    });
+
+    const stackedChart = new Chart(document.getElementById('stackedChart'), {
+      type: 'bar',
+      data: {},
+      options: {
+        plugins: { title: { display: true, text: 'Barras apiladas' } },
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true }
+        }
+      }
+    });
+
+    updateCharts('all');
+
+    document.getElementById('yearSelect').addEventListener('change', (e) => {
+      updateCharts(e.target.value);
+    });
+  </script>
+</body>
+
+</html>
